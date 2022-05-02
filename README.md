@@ -5,6 +5,7 @@
   - [PostgreSql](#postgresql)
     - [Account](#account)
   - [Flask](#flask)
+  - [Testing in Host](#testing-in-host)
 
 ## Preparation
 
@@ -108,4 +109,19 @@ source bin/activate
 sudo apt install python3-pip
 pip install Flask
 pip install waitress
+```
+
+## Testing in Host
+
+In a host with the macronizer command prepared:
+
+1. copy the `api.py` file (not `macronizer.py`, which is just a mock).
+2. edit the copied `api.py` to make these changes:
+   1. comment out `from macronizer import Macronizer`.
+   2. uncomment it after `sys.path.append`.
+3. launch `python api.py`
+4. test with a [curl POST](https://linuxize.com/post/curl-post-request/) like:
+
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{"text":"quos putamos amissos, praemissi sunt"}' localhost:105/macronize
 ```

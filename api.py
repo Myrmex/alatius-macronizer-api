@@ -24,8 +24,9 @@ def test():
 
 
 def getSwitch(dct, key):
-    if (key in dct and dct[key] == True
-            or dct[key] == "true" or dct[key] == "1" or dct[key] == 1):
+    if (key not in dct):
+        return False
+    if (dct[key] == True or dct[key] == "true" or dct[key] == "1" or dct[key] == 1):
         return True
     else:
         return False
@@ -41,14 +42,14 @@ def macronize():
     if (content_type != "application/json"):
         return "Content-Type not supported", 400
 
-    r = request.json
-    if ("text" not in r or not r["text"]):
+    dct = request.json
+    if ("text" not in dct or not dct["text"]):
         return {"result": ""}
 
-    text = r["text"]
-    maius = getSwitch(r, "maius")
-    utov = getSwitch(r, "utov")
-    itoj = getSwitch(r, "itoj")
+    text = dct["text"]
+    maius = getSwitch(dct, "maius")
+    utov = getSwitch(dct, "utov")
+    itoj = getSwitch(dct, "itoj")
     try:
         macronizer = Macronizer()
         macronizer.settext(text)
