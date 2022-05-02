@@ -6,6 +6,7 @@
     - [Account](#account)
   - [Flask](#flask)
   - [Testing in Host](#testing-in-host)
+  - [Dockerizing](#dockerizing)
 
 ## Preparation
 
@@ -125,3 +126,17 @@ In a host with the macronizer command prepared:
 ```bash
 curl -X POST -H "Content-Type: application/json" -d '{"text":"quos putamos amissos, praemissi sunt"}' localhost:105/macronize
 ```
+
+## Dockerizing
+
+To dockerize, we need:
+
+- base: Ubuntu with PostgreSQL.
+- the folder built by following the macronizer install procedure (`/usr/local/latin-macronizer`). We can zip it:
+
+```bash
+cd /usr/local
+zip -r ~/macro.zip latin-macronizer
+```
+
+- the `api.py` file from the folder with the flask API (`~/Documents/macron.flask`). We can place it in the same folder of the macronizer, and just comment out `MACRONIZER_LIB` and `sys.path.append` in it, so that we directly import from `macronizer.py` file in the same folder.
