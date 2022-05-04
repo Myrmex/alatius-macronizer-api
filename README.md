@@ -232,6 +232,8 @@ python macronize.py --test
 
 ```bash
 rm -Rf RFTagger treebank_data
+ln -s /usr/local/macronizer/latin-macronizer/api.py /usr/local/bin/macronizer-api
+chmod 755 /usr/local/bin/macronizer-api
 ```
 
 ### API
