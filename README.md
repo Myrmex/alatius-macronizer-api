@@ -7,6 +7,13 @@
   - [Flask](#flask)
   - [Testing in Host](#testing-in-host)
   - [Dockerizing](#dockerizing)
+    - [Create Container](#create-container)
+    - [Prepare](#prepare)
+    - [Build](#build)
+    - [Database](#database)
+    - [Cleanup](#cleanup)
+    - [API](#api)
+    - [Build Image](#build-image)
 
 ## Preparation
 
@@ -129,14 +136,130 @@ curl -X POST -H "Content-Type: application/json" -d '{"text":"quos putamos amiss
 
 ## Dockerizing
 
-To dockerize, we need:
+### Create Container
 
-- base: Ubuntu with PostgreSQL.
-- the folder built by following the macronizer install procedure (`/usr/local/latin-macronizer`). We can zip it:
+Create postgres container and fire bash in it:
 
-```bash
-cd /usr/local
-zip -r ~/macro.zip latin-macronizer
+```ps1
+# this is based on Debian GNU/Linux 11 (bullseye) (cat /etc/os-release)
+docker run --name macronizer -d -e POSTGRES_PASSWORD=postgres postgres
+# NO docker run --name macronizer phusion/baseimage:focal-1.2.0
+docker exec -it macronizer /bin/bash
 ```
 
-- the `api.py` file from the folder with the flask API (`~/Documents/macron.flask`). We can place it in the same folder of the macronizer, and just comment out `MACRONIZER_LIB` and `sys.path.append` in it, so that we directly import from `macronizer.py` file in the same folder.
+In it, you can enter the psql console with `psql --username postgres`.
+
+Note: each of the following steps assumes that you are located in the last location of the previous step. It is like a unique sh file, but I split the commands into sections to make them more readable.
+
+### Prepare
+
+Prepare folder `/usr/local/macronizer` and install prerequisites.
+
+```bash
+#!/bin/bash
+
+cd /usr/local
+mkdir macronizer
+cd macronizer
+
+apt-get update
+apt-get install git -y
+```
+
+Prepare development environment:
+
+```bash
+apt-get install python3 -y
+apt-get install python-is-python3 -y
+apt install build-essential libfl-dev python3-psycopg2 unzip -y
+```
+
+### Build
+
+Download repositories:
+
+```bash
+git clone https://github.com/Alatius/latin-macronizer.git
+cd latin-macronizer
+
+git clone https://github.com/Alatius/morpheus.git
+cd morpheus/src
+
+make
+make install
+cd ..
+
+./update.sh
+./update.sh
+# this is to test
+echo "salve" | MORPHLIB=stemlib bin/cruncher -L
+cd ..
+
+git clone https://github.com/Alatius/treebank_data.git
+
+apt-get install wget -y
+wget https://www.cis.uni-muenchen.de/~schmid/tools/RFTagger/data/RFTagger.zip
+unzip RFTagger.zip
+cd RFTagger/src
+
+make
+make install
+cd ../..
+
+./train-rftagger.sh
+```
+
+### Database
+
+Use `psql` to create a new user and a database:
+
+```bash
+psql --username postgres
+create user theusername password 'thepassword';
+create database macronizer encoding 'UTF8' owner theusername;
+\q
+```
+
+Initialize the database:
+
+```bash
+python macronize.py --initialize
+# for testing
+python macronize.py --test
+```
+
+### Cleanup
+
+```bash
+rm -Rf RFTagger treebank_data
+```
+
+### API
+
+Put `api.py` in the `latin_macronizer` folder, copying it from `api-production.py`.
+
+Then:
+
+```bash
+apt install python3-virtualenv -y
+virtualenv flask
+cd flask
+source bin/activate
+pip install Flask
+pip install waitress
+cd ..
+```
+
+You can test with `python api.py`.
+
+The entry point will be `python /usr/local/macronizer/latin-macronizer/api.py`.
+
+### Build Image
+
+When the procedure works, we will repeat it from scratch by getting `morpheus` from a patched repo, and by getting `api.py` from some other resource.
+
+Meantime, to build the image from the container as modified in the preceding sections (see [here](https://stackoverflow.com/questions/29015023/docker-commit-created-images-and-entrypoint)):
+
+1. `docker commit macronizer vedph2020/macronizer-base`
+2. create a Dockerfile to set the entry point (see this project).
+3. `docker build . -t vedph2020/macronizer:0.0.1-alpha`
