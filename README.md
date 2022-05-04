@@ -153,6 +153,8 @@ Note: each of the following steps assumes that you are located in the last locat
 
 ### Prepare
 
+- start location: `/`
+
 Prepare folder `/usr/local/macronizer` and install prerequisites.
 
 ```bash
@@ -163,28 +165,32 @@ mkdir macronizer
 cd macronizer
 
 apt-get update
-apt-get install git -y
-```
-
-Prepare development environment:
-
-```bash
-apt-get install python3 -y
-apt-get install python-is-python3 -y
-apt install build-essential libfl-dev python3-psycopg2 unzip -y
+apt-get install git python3 python-is-python3 build-essential libfl-dev python3-psycopg2 unzip -y
 ```
 
 ### Build
 
+- start location: `/usr/local/macronizer`
+
 Download repositories:
 
 ```bash
+apt-get install wget -y
+
 git clone https://github.com/Alatius/latin-macronizer.git
 cd latin-macronizer
 
 git clone https://github.com/Alatius/morpheus.git
-cd morpheus/src
+# patch before making:
+# we need to overwrite selected files, i.e. all the makefile
+# plus gkends/countendtables.c which must comment out #6 gk_string Gstr
+cd morpheus
+wget http://fusisoft.it/xfer/morpheus-src.zip
+unzip -o morpheus-src.zip
+rm morpheus-src.zip
+cd src
 
+# morpheus/src
 make
 make install
 cd ..
@@ -196,8 +202,6 @@ echo "salve" | MORPHLIB=stemlib bin/cruncher -L
 cd ..
 
 git clone https://github.com/Alatius/treebank_data.git
-
-apt-get install wget -y
 wget https://www.cis.uni-muenchen.de/~schmid/tools/RFTagger/data/RFTagger.zip
 unzip RFTagger.zip
 cd RFTagger/src
@@ -210,6 +214,8 @@ cd ../..
 ```
 
 ### Database
+
+- start location: `/usr/local/macronizer`
 
 Use `psql` to create a new user and a database:
 
@@ -230,19 +236,22 @@ python macronize.py --test
 
 ### Cleanup
 
+- start location: `/usr/local/macronizer`
+
 ```bash
 rm -Rf RFTagger treebank_data
-ln -s /usr/local/macronizer/latin-macronizer/api.py /usr/local/bin/macronizer-api
-chmod 755 /usr/local/bin/macronizer-api
 ```
 
 ### API
 
-Put `api.py` in the `latin_macronizer` folder, copying it from `api-production.py`.
+- start location: `/usr/local/macronizer`
 
-Then:
+Put `api.py` in the `latin_macronizer` folder (this is from `api-production.py`), and then install its dependencies.
+
+TODO avoid virtualenv?
 
 ```bash
+wget http://fusisoft.it/xfer/api.py
 apt install python3-virtualenv -y
 virtualenv flask
 cd flask
@@ -250,6 +259,8 @@ source bin/activate
 pip install Flask
 pip install waitress
 cd ..
+ln -s /usr/local/macronizer/latin-macronizer/api.py /usr/local/bin/macronizer-api
+chmod 755 /usr/local/bin/macronizer-api
 ```
 
 You can test with `python api.py`.
@@ -258,10 +269,16 @@ The entry point will be `python /usr/local/macronizer/latin-macronizer/api.py`.
 
 ### Build Image
 
-When the procedure works, we will repeat it from scratch by getting `morpheus` from a patched repo, and by getting `api.py` from some other resource.
+When the procedure works, we will repeat it from scratch by getting `morpheus` from a patched repo, and by getting `api.py` from some other resource. The main steps would be:
+
+- preparing a sh script with all these commands.
+- run the script in an intermediate Docker image.
+- base another build step on this image, and build the final version.
 
 Meantime, to build the image from the container as modified in the preceding sections (see [here](https://stackoverflow.com/questions/29015023/docker-commit-created-images-and-entrypoint)):
 
 1. `docker commit macronizer vedph2020/macronizer-base`
 2. create a Dockerfile to set the entry point (see this project).
 3. `docker build . -t vedph2020/macronizer:0.0.1-alpha`
+
+>Note: playing with containers will quickly eat a lot of disk space in the host. In Windows, you can reclaim it later using [this procedure](https://github.com/docker/for-win/issues/7348).
