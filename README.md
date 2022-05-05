@@ -17,7 +17,7 @@
 
 ## Overview
 
-Docker:
+Docker image:
 
 >pull vedph2020/macronizer
 
@@ -190,7 +190,12 @@ apt-get install git python3 python-is-python3 build-essential libfl-dev python3-
 
 - start location: `/usr/local/macronizer`
 
-Download repositories:
+Download repositories is not enough, as the original repository has some minor issues with `gcc` versions. Rather than forking the repository for very few changes, I just collected the files requiring a patch in a ZIP, used to overwrite the files from the original repository. Should the original repository be patched, the script will be simplified.
+
+You can find the ZIP file in this repository. Essentially, it contains these fixes:
+
+- all the `makefile`'s where changed to receive the option `-fcommon` in `CFLAGS`
+- comment `gk_string Gstr;` at line 6 of `countendtables.c`.
 
 ```bash
 git clone https://github.com/Alatius/latin-macronizer.git
@@ -198,7 +203,8 @@ cd latin-macronizer
 git clone https://github.com/Alatius/morpheus.git
 # patch before making:
 # we need to overwrite selected files, i.e. all the makefile
-# plus gkends/countendtables.c which must comment out #6 gk_string Gstr
+# plus gkends/countendtables.c which must comment out #6 gk_string Gstr.
+# I placed the patch files in a temporary location and use wget to fetch them
 cd morpheus
 wget http://fusisoft.it/xfer/morpheus-src.zip
 unzip -o morpheus-src.zip
@@ -286,3 +292,6 @@ optimize-vhd -Path C:\Users\dfusi\AppData\Local\Docker\wsl\data\ext4.vhdx -Mode 
 ```
 
 You can also [move the VHDX](https://github.com/docker/for-win/issues/7348).
+
+Happy coding!
+Daniele Fusi
