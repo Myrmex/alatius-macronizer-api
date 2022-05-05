@@ -1,12 +1,12 @@
 # Alatius Macronizer Flask API
 
 - [Alatius Macronizer Flask API](#alatius-macronizer-flask-api)
+  - [Overview](#overview)
   - [Preparation](#preparation)
-  - [PostgreSql](#postgresql)
-    - [Account](#account)
-  - [Flask](#flask)
-  - [Testing in Host](#testing-in-host)
-  - [Dockerizing](#dockerizing)
+    - [PostgreSql](#postgresql)
+      - [PostgreSql Account](#postgresql-account)
+    - [Flask](#flask)
+  - [Dockerization](#dockerization)
     - [Create Container](#create-container)
     - [Prepare](#prepare)
     - [Build](#build)
@@ -15,36 +15,75 @@
     - [API](#api)
     - [Build Image](#build-image)
 
+## Overview
+
+Docker:
+
+>pull vedph2020/macronizer
+
+This project contains the logic for building a raw dockerized version of the [Alatius macronizer](https://alatius.com/macronizer/). This excellent macronizer by Johan Winge is essentially based on Python running on top of C tools like [RFTagger](http://www.cis.uni-muenchen.de/~schmid/tools/RFTagger/) and [Latin dependency treebank](http://www.dh.uni-leipzig.de/wo/projects/ancient-greek-and-latin-dependency-treebank-2-0/). It also provides an Apache based web page on top of its engine, but what is really needed for projects requiring to integrate it is a web API, so that any software client, whatever its language, can take advantage of that functionality. Sure, that may not be the optimal way of integrating software components; but certainly is one of the simplest.
+
+Once you have a Docker image wrapping the macronizer, all its software dependencies, and its PostgreSQL database, it becomes much easier to consume its functionality: you just have to add a layer to your Docker stack, and consume the API endpoint for macronization.
+
+The API I created is a minimalist thin layer on top of macronizer. Its only purpose is getting some text to be macronized, and replying with the result. There is no need for authentication or authorization logic, as this API is made to be consumed by upper layers which eventually provide it.
+
+The API uses JSON and consists of two endpoints:
+
+- `GET /test` just returns a constant JSON object with a single string property named `result`; it can be used for diagnostic purposes to test if the API itself is running.
+- `POST /macronize` posts a Latin text and gets its macronized version. Its input is a JSON object with this schema (all the properties are optional unless stated otherwise):
+  - `text` (string, required): the text to macronize.
+  - `maius` (boolean): include/exclude capitalized words.
+  - `utov` (boolean): convert U to V.
+  - `itoj` (boolean): convert I to J.
+The output object has these properties:
+  - `result` (string): the resulting text.
+  - `error` (string): the error message, if any.
+
+Given its essential nature, the API has been implemented with `Flask`, using `waitress` to serve it.
+
+To create the Docker image, I followed the "manual" approach: start from a base image, modify it configuring everything for running macronizer, add the API on top of it, and then commit the modified Docker container into a new image. That's not the optimal way of building it, whence its size; but this represents a first stage, which can later be refined. My first objective was getting something working in a reasonable timeframe, to provide better integration of macronizer functionalities for a research tool built on top of my Chiron metrical analysis system, targeting late antique prose rhythm, in the context of the [ERC Consolidator Grant "AntCoCo"](https://www.uni-bamberg.de/en/erc-cog-antcoco/the-project/) lead by prof.dr.dr.dr. Peter Riedlberger.
+
+Currently, the alpha image I got from this process is tagged `vedph2020/macronizer` in the Docker Hub.
+
 ## Preparation
 
-To start with, in your Ubuntu user home create `macron` under `Documents`. Then, enter this `macron` directory and clone the macronizer repository: `git clone https://github.com/Alatius/latin-macronizer.git`.
+Before even starting to work on the Docker image, I had to check all the setup passages, and make sure that they work seamlessly in a Linux environment. To start with, I created a fresh Ubuntu VM and followed the setup [instructions](https://github.com/Alatius/latin-macronizer/blob/master/INSTALL.txt).
 
-To setup the host:
+>Note: if you want to avoid [gcc issues](https://github.com/Alatius/latin-macronizer/issues/22), use Ubuntu 20.04. Later Ubuntu releases have compilation problem, which require some patches to be addressed, until the main repository is patched.
 
-Note: use Ubuntu 20.04. For some reason, 21 or 22 give errors during the make process.
+To this end, in this Ubuntu user's home, create a `Documents/macron` directory. Then, enter this `macron` directory and clone the macronizer repository:
+
+```bash
+cd ~/Documents
+mkdir macron
+cd macron
+git clone https://github.com/Alatius/latin-macronizer.git
+```
+
+Then, essentially there are 3 setup steps:
 
 1. setup PostgreSql.
-2. setup macronizer: [instructions](https://github.com/Alatius/latin-macronizer/blob/master/INSTALL.txt).
-3. setup Flask.
+2. setup macronizer following the original [instructions](https://github.com/Alatius/latin-macronizer/blob/master/INSTALL.txt).
+3. setup Flask API.
 
-## PostgreSql
+### PostgreSql
 
-Note: once installed, by default PostgreSQL Server will start up automatically each time your system boots. If you’d like to change this behavior, you can always modify it with this command:
+Quick setup instructions can be found e.g. here:
+
+- [Ubuntu 20.04](https://www.digitalocean.com/community/tutorials/how-to-install-postgresql-on-ubuntu-20-04-quickstart)
+- [Ubuntu 21](https://www.linuxhelp.com/how-to-install-postgresql-on-ubuntu-21-04)
+- [Ubuntu 22](https://linuxconfig.org/ubuntu-22-04-postgresql-installation)
+- to remove before installing: `sudo apt-get remove --purge postgresql-13` (use your version number).
+
+Note: once installed, by default PostgreSQL Server will start up automatically each time the system boots. To disable this behavior, you can enter:
 
 ```bash
  sudo systemctl disable postgresql
  ```
 
- (use `enable` to enable it back).
+and then use `enable` to enable it back.
 
- Instructions:
-
-- [Ubuntu 21](https://www.linuxhelp.com/how-to-install-postgresql-on-ubuntu-21-04)
-- [Ubuntu 22](https://linuxconfig.org/ubuntu-22-04-postgresql-installation)
-- [Ubuntu 20.04](https://www.digitalocean.com/community/tutorials/how-to-install-postgresql-on-ubuntu-20-04-quickstart)
-- to remove before installing: `sudo apt-get remove --purge postgresql-13` (use your version number)
-
-The following refers to Ubuntu 20.
+So, at first I install PostgreSql (this is required for those distros or Docker base images without it):
 
 ```bash
 sudo apt update
@@ -54,7 +93,7 @@ sudo systemctl start postgresql.service
 
 (you can specify version like ... `install postgresl-14`).
 
-Check if service is running (<https://askubuntu.com/questions/50621/can-not-connect-to-postgresql-listening-on-port-5432>:
+To check if the database service is running (<https://askubuntu.com/questions/50621/can-not-connect-to-postgresql-listening-on-port-5432>:
 
 ```bash
 netstat -nlp | grep 5432
@@ -72,11 +111,11 @@ It's typical to use port 5432 if it is available. If it isn't, most installers w
 psql -p 5433
 ```
 
-### Account
+#### PostgreSql Account
 
-By default, Postgres uses a concept called “roles” to handle authentication and authorization. These are, in some ways, similar to regular Unix-style users and groups.
+This is a reminder for those not acquainted with PostgreSql, summarized from [this page](https://www.digitalocean.com/community/tutorials/how-to-install-postgresql-on-ubuntu-20-04-quickstart).
 
-Upon installation, Postgres is set up to use `ident` authentication, meaning that it associates Postgres roles with a matching Unix/Linux _system account_. If a role exists within Postgres, a Unix/Linux username with the same name is able to sign in as that role. This is why there is no default password for the default `postgres` user.
+Postgres uses a concept called “roles” to handle authentication and authorization. These are, in some ways, similar to regular Unix-style users and groups. After installation, Postgres is configured to use `ident` authentication, meaning that it associates Postgres roles with a matching Unix/Linux _system account_. If a role exists within Postgres, a Unix/Linux username with the same name is able to sign in as that role. This is why there is no default password for the default `postgres` user.
 
 The installation procedure created a user account called `postgres` that is associated with the default Postgres role. There are a few ways to utilize this account to access Postgres:
 
@@ -102,54 +141,36 @@ Once you login as `postgres` (method a), create a new role:
 createuser --interactive
 ```
 
-## Flask
+You can see the script from this project for a non interactive version.
+
+### Flask
 
 - [Flask API tutorial](https://auth0.com/blog/developing-restful-apis-with-python-and-flask/)
 - [Flask setup](https://stackoverflow.com/questions/31252791/flask-importerror-no-module-named-flask)
 
-Flask setup: in the macron folder:
-
-```bash
-sudo apt install python3-virtualenv
-virtualenv flask
-cd flask
-source bin/activate
-sudo apt install python3-pip
-pip install Flask
-pip install waitress
-```
-
-## Testing in Host
-
-In a host with the macronizer command prepared:
-
-1. copy the `api.py` file (not `macronizer.py`, which is just a mock).
-2. edit the copied `api.py` to make these changes:
-   1. comment out `from macronizer import Macronizer`.
-   2. uncomment it after `sys.path.append`.
-3. launch `python api.py`
-4. test with a [curl POST](https://linuxize.com/post/curl-post-request/) like:
+To develop the API skeleton I used a trivial macronizer's mock you can find at `macronizer.py` in this project. In the Linux VM you can fire the API using the real macronizer tool, e.g. with a [curl POST](https://linuxize.com/post/curl-post-request/) like:
 
 ```bash
 curl -X POST -H "Content-Type: application/json" -d '{"text":"quos putamos amissos, praemissi sunt"}' localhost:105/macronize
 ```
 
-## Dockerizing
+## Dockerization
+
+Here I recap the procedure for creating the Docker image. As macronizer requires to compile C files, execute Python scripts, and connect to a PostgreSql database, I chose the official PostgreSql image as my base.
 
 ### Create Container
 
-Create postgres container and fire bash in it:
+First you create a `postgres` container and fire `bash` in it:
 
 ```ps1
 # this is based on Debian GNU/Linux 11 (bullseye) (cat /etc/os-release)
 docker run --name macronizer -d -e POSTGRES_PASSWORD=postgres postgres
-# NO docker run --name macronizer phusion/baseimage:focal-1.2.0
 docker exec -it macronizer /bin/bash
 ```
 
 In it, you can enter the psql console with `psql --username postgres`.
 
-Note: each of the following steps assumes that you are located in the last location of the previous step. It is like a unique sh file, but I split the commands into sections to make them more readable.
+>Note: each of the following steps assumes that you are located in the last location of the previous step. It is like a unique sh file, but I split the commands into sections to make them more readable. You can find the full script at [build.sh](build.sh).
 
 ### Prepare
 
@@ -158,14 +179,11 @@ Note: each of the following steps assumes that you are located in the last locat
 Prepare folder `/usr/local/macronizer` and install prerequisites.
 
 ```bash
-#!/bin/bash
-
 cd /usr/local
 mkdir macronizer
 cd macronizer
-
 apt-get update
-apt-get install git python3 python-is-python3 build-essential libfl-dev python3-psycopg2 unzip -y
+apt-get install git python3 python-is-python3 build-essential libfl-dev python3-psycopg2 unzip wget -y
 ```
 
 ### Build
@@ -175,11 +193,8 @@ apt-get install git python3 python-is-python3 build-essential libfl-dev python3-
 Download repositories:
 
 ```bash
-apt-get install wget -y
-
 git clone https://github.com/Alatius/latin-macronizer.git
 cd latin-macronizer
-
 git clone https://github.com/Alatius/morpheus.git
 # patch before making:
 # we need to overwrite selected files, i.e. all the makefile
@@ -189,27 +204,22 @@ wget http://fusisoft.it/xfer/morpheus-src.zip
 unzip -o morpheus-src.zip
 rm morpheus-src.zip
 cd src
-
 # morpheus/src
 make
 make install
 cd ..
-
 ./update.sh
 ./update.sh
 # this is to test
 echo "salve" | MORPHLIB=stemlib bin/cruncher -L
 cd ..
-
 git clone https://github.com/Alatius/treebank_data.git
 wget https://www.cis.uni-muenchen.de/~schmid/tools/RFTagger/data/RFTagger.zip
 unzip RFTagger.zip
 cd RFTagger/src
-
 make
 make install
 cd ../..
-
 ./train-rftagger.sh
 ```
 
@@ -220,10 +230,7 @@ cd ../..
 Use `psql` to create a new user and a database:
 
 ```bash
-psql --username postgres
-create user theusername password 'thepassword';
-create database macronizer encoding 'UTF8' owner theusername;
-\q
+psql --username postgres -c "create user theusername password 'thepassword';" -c "create database macronizer encoding 'UTF8' owner theusername;"
 ```
 
 Initialize the database:
@@ -246,39 +253,36 @@ rm -Rf RFTagger treebank_data
 
 - start location: `/usr/local/macronizer`
 
-Put `api.py` in the `latin_macronizer` folder (this is from `api-production.py`), and then install its dependencies.
-
-TODO avoid virtualenv?
+Put `api.py` in the `latin_macronizer` folder (this is from `api-production.py`), and then install its dependencies (see also <https://code.visualstudio.com/docs/python/tutorial-flask>):
 
 ```bash
+# I got api.py from a temporary location as this repo did not yet exist
 wget http://fusisoft.it/xfer/api.py
-apt install python3-virtualenv -y
-virtualenv flask
-cd flask
-source bin/activate
-pip install Flask
-pip install waitress
-cd ..
-ln -s /usr/local/macronizer/latin-macronizer/api.py /usr/local/bin/macronizer-api
-chmod 755 /usr/local/bin/macronizer-api
+apt-get install python3-venv -y
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip setuptools wheel
+python -m pip install flask
+python -m pip install waitress
 ```
 
 You can test with `python api.py`.
 
-The entry point will be `python /usr/local/macronizer/latin-macronizer/api.py`.
-
 ### Build Image
 
-When the procedure works, we will repeat it from scratch by getting `morpheus` from a patched repo, and by getting `api.py` from some other resource. The main steps would be:
+To build the image from the container as modified in the preceding sections (see [here](https://stackoverflow.com/questions/29015023/docker-commit-created-images-and-entrypoint)), enter the folder where you downloaded this repository in your host machine and type a command similar to this:
 
-- preparing a sh script with all these commands.
-- run the script in an intermediate Docker image.
-- base another build step on this image, and build the final version.
+1. `docker commit macronizer vedph2020/macronizer-base` to commit container's changes into an image.
+2. `docker build . -t vedph2020/macronizer:0.0.2-alpha` to build the image using [Dockerfile](Dockerfile).
 
-Meantime, to build the image from the container as modified in the preceding sections (see [here](https://stackoverflow.com/questions/29015023/docker-commit-created-images-and-entrypoint)):
+>Note: playing with containers will quickly eat a lot of disk space in the host. In Windows, you can reclaim it later:
 
-1. `docker commit macronizer vedph2020/macronizer-base`
-2. create a Dockerfile to set the entry point (see this project).
-3. `docker build . -t vedph2020/macronizer:0.0.1-alpha`
+1. locate the VHDX file for Docker WSL, usually somewhere like `C:\Users\dfusi\AppData\Local\Docker\wsl\data`.
+2. close Docker desktop from its icon and run `wsl --shutdown`.
+3. run:
 
->Note: playing with containers will quickly eat a lot of disk space in the host. In Windows, you can reclaim it later using [this procedure](https://github.com/docker/for-win/issues/7348).
+```ps1
+optimize-vhd -Path C:\Users\dfusi\AppData\Local\Docker\wsl\data\ext4.vhdx -Mode full
+```
+
+You can also [move the VHDX](https://github.com/docker/for-win/issues/7348).

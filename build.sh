@@ -3,11 +3,9 @@ cd /usr/local
 mkdir macronizer
 cd macronizer
 apt-get update
-apt-get install git python3 python-is-python3 build-essential libfl-dev python3-psycopg2 unzip -y
+apt-get install git python3 python-is-python3 build-essential libfl-dev python3-psycopg2 unzip wget -y
 
 # build
-echo BUILD
-apt-get install wget -y
 git clone https://github.com/Alatius/latin-macronizer.git
 cd latin-macronizer
 git clone https://github.com/Alatius/morpheus.git
@@ -38,7 +36,6 @@ cd ../..
 ./train-rftagger.sh
 
 # database
-echo DATABASE
 psql --username postgres -c "create user theusername password 'thepassword';" -c "create database macronizer encoding 'UTF8' owner theusername;"
 python macronize.py --initialize
 python macronize.py --test
@@ -48,12 +45,9 @@ rm -Rf RFTagger treebank_data
 
 # api
 wget http://fusisoft.it/xfer/api.py
-apt install python3-virtualenv -y
-virtualenv flask
-cd flask
-source bin/activate
-pip install Flask
-pip install waitress
-cd ..
-ln -s /usr/local/macronizer/latin-macronizer/api.py /usr/local/bin/macronizer-api
-chmod 755 /usr/local/bin/macronizer-api
+apt-get install python3-venv -y
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip setuptools wheel
+python -m pip install flask
+python -m pip install waitress
