@@ -93,6 +93,12 @@ Server: waitress
 {"result":"N\u012bl sine magn\u014d v\u012bt\u0101 lab\u014dre dedit mort\u0101libus."}
 ```
 
+In Linux you could do like this:
+
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{"text":"quos putamos amissos, praemissi sunt."}' localhost:51234/macronize
+```
+
 ## Preparation
 
 Before even starting to work on the Docker image, I had to check all the setup passages, and make sure that they work seamlessly in a Linux environment. To start with, I created a fresh Ubuntu VM and followed the setup [instructions](https://github.com/Alatius/latin-macronizer/blob/master/INSTALL.txt).
@@ -192,6 +198,8 @@ createuser --interactive
 You can see the script from this project for a non interactive version.
 
 ### Flask
+
+Useful links:
 
 - [Flask API tutorial](https://auth0.com/blog/developing-restful-apis-with-python-and-flask/)
 - [Flask setup](https://stackoverflow.com/questions/31252791/flask-importerror-no-module-named-flask)
@@ -333,10 +341,10 @@ To build the image from the container as modified in the preceding sections (see
 
 1. locate the VHDX file for Docker WSL, usually somewhere like `C:\Users\dfusi\AppData\Local\Docker\wsl\data`.
 2. close Docker desktop from its icon and run `wsl --shutdown`.
-3. run:
+3. run (replace `USERNAME` with your Windows user name):
 
 ```ps1
-optimize-vhd -Path C:\Users\dfusi\AppData\Local\Docker\wsl\data\ext4.vhdx -Mode full
+optimize-vhd -Path C:\Users\USERNAME\AppData\Local\Docker\wsl\data\ext4.vhdx -Mode full
 ```
 
 You can also [move the VHDX](https://github.com/docker/for-win/issues/7348).
