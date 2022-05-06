@@ -41,7 +41,7 @@ The output object has these properties:
 
 Given its essential nature, the API has been implemented with `Flask`, using `waitress` to serve it.
 
-To create the Docker image, I followed the "manual" approach: start from a base image, modify it configuring everything for running macronizer, add the API on top of it, and then commit the modified Docker container into a new image. That's not the optimal way of building it, whence its size; but this represents a first stage, which can later be refined. My first objective was getting something working in a reasonable timeframe, to provide better integration of macronizer functionalities for a research tool built on top of my Chiron metrical analysis system, targeting late antique prose rhythm, in the context of the [ERC Consolidator Grant "AntCoCo"](https://www.uni-bamberg.de/en/erc-cog-antcoco/the-project/) lead by prof.dr.dr.dr. Peter Riedlberger.
+To create the Docker image, I followed the "manual" approach: start from a base image, modify it configuring everything for running macronizer, add the API on top of it, and then commit the modified Docker container into a new image. That's not the optimal way of building it, whence its size; but this represents a first stage, which can later be refined. My first objective was getting something working in a reasonable timeframe, to provide better integration of macronizer functionalities for a research tool built on top of my Chiron metrical analysis system (see e.g. [part 1](http://www.libraweb.net/articoli3.php?chiave=202106501&rivista=65&articolo=202106501004) and [part 2](http://www.libraweb.net/articoli3.php?chiave=202106502&rivista=65&articolo=202106502004) of my latest paper about it), targeting late antique prose rhythm, in the context of the [ERC Consolidator Grant "AntCoCo"](https://www.uni-bamberg.de/en/erc-cog-antcoco/the-project/) lead by prof.dr.dr.dr. Peter Riedlberger.
 
 Currently, the alpha image I got from this process is tagged `vedph2020/macronizer` in the Docker Hub.
 
@@ -294,4 +294,5 @@ optimize-vhd -Path C:\Users\dfusi\AppData\Local\Docker\wsl\data\ext4.vhdx -Mode 
 You can also [move the VHDX](https://github.com/docker/for-win/issues/7348).
 
 Happy coding!
+
 Daniele Fusi
