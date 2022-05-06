@@ -2,6 +2,7 @@
 
 - [Alatius Macronizer Flask API](#alatius-macronizer-flask-api)
   - [Overview](#overview)
+  - [Quick Start](#quick-start)
   - [Preparation](#preparation)
     - [PostgreSql](#postgresql)
       - [PostgreSql Account](#postgresql-account)
@@ -44,6 +45,53 @@ Given its essential nature, the API has been implemented with [Flask](https://fl
 To create the Docker image, I followed the "manual" approach: start from a base image, modify it configuring everything for running macronizer, add the API on top of it, and then commit the modified Docker container into a new image. That's not the optimal way of building it, whence its size; but this represents a first stage, which can later be refined. My first objective was getting something working in a reasonable timeframe, to provide better integration of macronizer functionalities for a research tool built on top of my Chiron metrical analysis system (see e.g. [part 1](http://www.libraweb.net/articoli3.php?chiave=202106501&rivista=65&articolo=202106501004) and [part 2](http://www.libraweb.net/articoli3.php?chiave=202106502&rivista=65&articolo=202106502004) of my latest paper about it), targeting late antique prose rhythm, in the context of the [ERC Consolidator Grant "AntCoCo"](https://www.uni-bamberg.de/en/erc-cog-antcoco/the-project/) lead by prof.dr.dr.dr. Peter Riedlberger.
 
 Currently, the alpha image I got from this process is tagged `vedph2020/macronizer` in the Docker Hub.
+
+## Quick Start
+
+To quickly play with the API:
+
+1. ensure you have [installed Docker](https://github.com/vedph/cadmus_doc/blob/master/deploy/docker-setup.md) on your computer.
+2. download [docker-compose.yml](docker-compose.yml) from this repository into some folder. Ensure that you download this as a plain text (YAML) file, rather than as the source code of the GitHub HTML page.
+3. open a terminal window in that folder, and enter command:
+
+```bash
+docker compose up
+```
+
+This is for Docker compose V2. If you are still on V1, use the non-plugin syntax, i.e. `docker-compose up` (mind the dash). Remember to prefix `sudo` for Linux/OSX.
+
+The macronizer API should now be reachable at `localhost:51234`. You can test it is there with `localhost:51234/test`.
+
+To macronize some text, you must post a JSON object representing it at `localhost:51234/macronize`. For instance, here is a sample request:
+
+```txt
+POST http://localhost:51234/macronize HTTP/1.1
+Content-Type: application/json
+User-Agent: PostmanRuntime/7.29.0
+Accept: */*
+Cache-Control: no-cache
+Postman-Token: 9b15a31c-7d14-4bba-ae96-859813f0bf07
+Host: localhost:51234
+Accept-Encoding: gzip, deflate, br
+Connection: keep-alive
+Content-Length: 64
+
+{
+    "text": "Nil sine magno vita labore dedit mortalibus."
+}
+```
+
+Response:
+
+```txt
+HTTP/1.1 200 OK
+Content-Length: 88
+Content-Type: application/json
+Date: Fri, 06 May 2022 10:59:08 GMT
+Server: waitress
+
+{"result":"N\u012bl sine magn\u014d v\u012bt\u0101 lab\u014dre dedit mort\u0101libus."}
+```
 
 ## Preparation
 
