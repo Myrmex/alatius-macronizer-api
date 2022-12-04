@@ -28,20 +28,21 @@ This project contains the logic for building a raw dockerized version of the [Al
 
 Once you have a Docker image wrapping the macronizer, all its software dependencies, and its PostgreSQL database, it becomes much easier to consume its functionality: you just have to add a layer to your Docker stack, and consume the API endpoint for macronization.
 
-The API I created is a minimalist thin layer on top of macronizer. Its only purpose is getting some text to be macronized, and replying with the result. There is no need for authentication or authorization logic, as this API is made to be consumed by upper layers which eventually provide it.
+The API I created is a minimalist thin layer on top of macronizer. Its only purpose is getting some text to be macronized, and replying with the result. There is no need for authentication or authorization logic, as this API is made to be consumed by upper layers which eventually provide it. In my scenario, I have an ASP.NET 7 web API consuming this service from a Docker compose stack, and exposing it to the outer world in the context of a set of services protected by JWT-based authentication.
 
 The API uses JSON and consists of two endpoints:
 
 - `GET /test` just returns a constant JSON object with a single string property named `result`; it can be used for diagnostic purposes to test if the API itself is running.
-- `POST /macronize` posts a Latin text and gets its macronized version. Its input is a JSON object with this schema (all the properties are optional unless stated otherwise):
+- `POST /macronize` posts a Latin text and gets its macronized version. Its _input_ is a JSON object with this schema (all the properties are optional unless stated otherwise):
   - `text` (string, required): the text to macronize.
   - `maius` (boolean): include/exclude capitalized words.
   - `utov` (boolean): convert U to V.
   - `itoj` (boolean): convert I to J.
   - `ambigs` (boolean): mark ambiguous lengths.
-The output object has these properties:
+The _output_ object has these properties:
   - `result` (string): the resulting text.
   - `error` (string): the error message, if any.
+  - `maius`, `utov`, `itoj`, `ambigs`: the parameters as received in the POST request.
 
 Given its essential nature, the API has been implemented with [Flask](https://flask.palletsprojects.com/), using [waitress](https://docs.pylonsproject.org/projects/waitress/en/latest/) to serve it.
 
