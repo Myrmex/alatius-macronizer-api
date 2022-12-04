@@ -38,6 +38,7 @@ The API uses JSON and consists of two endpoints:
   - `maius` (boolean): include/exclude capitalized words.
   - `utov` (boolean): convert U to V.
   - `itoj` (boolean): convert I to J.
+  - `ambigs` (boolean): mark ambiguous lengths.
 The output object has these properties:
   - `result` (string): the resulting text.
   - `error` (string): the error message, if any.
