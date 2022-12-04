@@ -32,7 +32,7 @@ def getSwitch(dct, key):
         return False
 
 # POST /macronize:
-# input: { text: string, maius?: boolean, utov?: boolean, itoj?: boolean}
+# input: { text: string, maius?: boolean, utov?: boolean, itoj?: boolean, ambigs?: boolean}
 # output: { result: string, error?: string }
 
 
@@ -50,10 +50,11 @@ def macronize():
     maius = getSwitch(dct, "maius")
     utov = getSwitch(dct, "utov")
     itoj = getSwitch(dct, "itoj")
+    ambigs = getSwitch(dct, "ambigs")
     try:
         macronizer = Macronizer()
         macronizer.settext(text)
-        result = macronizer.gettext(True, maius, utov, itoj, markambigs=False)
+        result = macronizer.gettext(True, maius, utov, itoj, ambigs)
     except Exception as ex:
         return {"error": ex.args[0], "result": ""}
     return {"result": result}
