@@ -104,11 +104,11 @@ curl -X POST -H "Content-Type: application/json" -d '{"text":"quos putamos amiss
 
 ## Preparation
 
-Before even starting to work on the Docker image, I had to check all the setup passages, and make sure that they work seamlessly in a Linux environment. To start with, I created a fresh Ubuntu VM and followed the setup [instructions](https://github.com/Alatius/latin-macronizer/blob/master/INSTALL.txt).
+Before even starting to work on the Docker image, I had to check all the setup passages, and make sure that they work seamlessly in a Linux environment. First, I created a fresh Ubuntu VM (20.04) to play with.
 
 >Note: if you want to avoid [gcc issues](https://github.com/Alatius/latin-macronizer/issues/22), use Ubuntu 20.04. Later Ubuntu releases have compilation problem, which require some patches to be addressed, until the main repository is patched.
 
-To this end, in this Ubuntu user's home, create a `Documents/macron` directory. Then, enter this `macron` directory and clone the macronizer repository:
+To start with, in the Ubuntu user's home, create a `Documents/macron` directory. Then, enter this `macron` directory and clone the macronizer repository:
 
 ```bash
 cd ~/Documents
