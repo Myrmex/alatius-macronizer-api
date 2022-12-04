@@ -105,9 +105,9 @@ curl -X POST -H "Content-Type: application/json" -d '{"text":"quos putamos amiss
 
 ## Preparation
 
-Before even starting to work on the Docker image, I had to check all the setup passages, and make sure that they work seamlessly in a Linux environment. First, I created a fresh Ubuntu VM (20.04) to play with.
+Before even starting to work on the Docker image, I had to check all the setup passages, and make sure that they work seamlessly in a Linux environment. First, I created a fresh Ubuntu VM (20.04) to play with, using the Docker Linux image to create a `macronizer` container.
 
->Note: if you want to avoid [gcc issues](https://github.com/Alatius/latin-macronizer/issues/22), use Ubuntu 20.04. Later Ubuntu releases have compilation problem, which require some patches to be addressed, until the main repository is patched.
+>Note: if you want to avoid [gcc issues](https://github.com/Alatius/latin-macronizer/issues/22), use Ubuntu 20.04. Later Ubuntu releases have compilation problem, which require some patches to be addressed, until the main repository is patched. Also, a full-fledged Unix distro is of course far from ideal as an image base; yet, starting from a more streamlined image would imply consuming much more time in adjusting the setup procedure.
 
 To start with, in the Ubuntu user's home, create a `Documents/macron` directory. Then, enter this `macron` directory and clone the macronizer repository:
 
@@ -317,7 +317,7 @@ rm -Rf RFTagger treebank_data
 
 ### API
 
-- start location: `/usr/local/macronizer`
+- start location: `/usr/local/latin-macronizer`
 
 Put `api.py` in the `latin_macronizer` folder (this is from `api-production.py`), and then install its dependencies (see also <https://code.visualstudio.com/docs/python/tutorial-flask>):
 
