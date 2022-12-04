@@ -54,7 +54,7 @@ def macronize():
     try:
         macronizer = Macronizer()
         macronizer.settext(text)
-        result = macronizer.gettext(True, maius, utov, itoj, ambigs)
+        result = macronizer.gettext(True, maius, utov, itoj, markambigs=ambigs)
     except Exception as ex:
         return {"error": ex.args[0], "result": ""}
     return {"result": result}
