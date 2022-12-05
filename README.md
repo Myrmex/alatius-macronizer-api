@@ -2,19 +2,19 @@
 
 - [Alatius Macronizer Flask API](#alatius-macronizer-flask-api)
   - [Overview](#overview)
-  - [Quick Start](#quick-start)
-  - [Preparation](#preparation)
-    - [PostgreSql](#postgresql)
-      - [PostgreSql Account](#postgresql-account)
-    - [Flask](#flask)
-  - [Dockerization](#dockerization)
-    - [Create Container](#create-container)
-    - [Prepare](#prepare)
-    - [Build](#build)
-    - [Database](#database)
-    - [Cleanup](#cleanup)
-    - [API](#api)
-    - [Build Image](#build-image)
+  - [Usage](#usage)
+  - [Testing the Solution](#testing-the-solution)
+    - [Installing PostgreSql](#installing-postgresql)
+      - [Note on PostgreSql Account](#note-on-postgresql-account)
+    - [Adding Flask API](#adding-flask-api)
+  - [Creating the Docker Image](#creating-the-docker-image)
+    - [Creating the Docker Container](#creating-the-docker-container)
+    - [Preparing the Build Environment](#preparing-the-build-environment)
+    - [Building Macronizer Code](#building-macronizer-code)
+    - [Creating Macronizer Database](#creating-macronizer-database)
+    - [Cleaning Up](#cleaning-up)
+    - [Adding the API](#adding-the-api)
+    - [Building the Image](#building-the-image)
 
 >This software is part of a project that has received funding from the European Research Council (ERC) under the European Union's Horizon 2020 research and innovation program under grant agreement No. 101001991.
 
@@ -30,7 +30,7 @@ Once you have a Docker image wrapping the macronizer, all its software dependenc
 
 The API I created is a minimalist thin layer on top of macronizer. Its only purpose is getting some text to be macronized, and replying with the result. There is no need for authentication or authorization logic, as this API is made to be consumed by upper layers which eventually provide it. In my scenario, I have an ASP.NET 7 web API consuming this service from a Docker compose stack, and exposing it to the outer world in the context of a set of services protected by JWT-based authentication.
 
-The API uses JSON and consists of two endpoints:
+The API uses JSON and consists of two **endpoints**:
 
 - `GET /test` just returns a constant JSON object with a single string property named `result`; it can be used for diagnostic purposes to test if the API itself is running.
 - `POST /macronize` posts a Latin text and gets its macronized version. Its _input_ is a JSON object with this schema (all the properties are optional unless stated otherwise):
@@ -46,27 +46,29 @@ The _output_ object has these properties:
 
 Given its essential nature, the API has been implemented with [Flask](https://flask.palletsprojects.com/), using [waitress](https://docs.pylonsproject.org/projects/waitress/en/latest/) to serve it.
 
-To create the Docker image, I followed the "manual" approach: start from a base image, modify it configuring everything for running macronizer, add the API on top of it, and then commit the modified Docker container into a new image. That's not the optimal way of building it, whence its size; but this represents a first stage, which can later be refined. My first objective was getting something working in a reasonable timeframe, to provide better integration of macronizer functionalities for a research tool built on top of my Chiron metrical analysis system (see e.g. [part 1](http://www.libraweb.net/articoli3.php?chiave=202106501&rivista=65&articolo=202106501004) and [part 2](http://www.libraweb.net/articoli3.php?chiave=202106502&rivista=65&articolo=202106502004) of my latest paper about it), targeting late antique prose rhythm, in the context of the [ERC Consolidator Grant "AntCoCo"](https://www.uni-bamberg.de/en/erc-cog-antcoco/the-project/) lead by prof.dr.dr.dr. Peter Riedlberger.
+To create the Docker image, I followed the "manual" approach: start from a base image; modify it configuring everything for running macronizer; add the API on top of it; and finally commit the modified Docker container into a new image. That's not the optimal way of building it, whence its size; but this represents a first stage, which can later be refined. My first objective was getting something working in a reasonable timeframe, to provide better integration of macronizer functionalities for a research tool built on top of my Chiron metrical analysis system (see e.g. [part 1](http://www.libraweb.net/articoli3.php?chiave=202106501&rivista=65&articolo=202106501004) and [part 2](http://www.libraweb.net/articoli3.php?chiave=202106502&rivista=65&articolo=202106502004) of my latest paper about it), targeting late antique prose rhythm, in the context of the [ERC Consolidator Grant "AntCoCo"](https://www.uni-bamberg.de/en/erc-cog-antcoco/the-project/) lead by prof.dr.dr.dr. Peter Riedlberger.
 
 Currently, the alpha image I got from this process is tagged `vedph2020/macronizer` in the Docker Hub.
 
-## Quick Start
+>Note: the API is written with Flask, thus using Python. You can find it in the image folder `/usr/local/latin-macronizer` in the file `api.py` when you enter the container's bash shell via a command like `docker exec -it CONTAINERID /bin/bash`.
 
-To quickly play with the API:
+## Usage
+
+To quickly play with the macronizer API service:
 
 1. ensure you have [installed Docker](https://github.com/vedph/cadmus_doc/blob/master/deploy/docker-setup.md) on your computer.
 2. download [docker-compose.yml](docker-compose.yml) from this repository into some folder. Ensure that you download this as a plain text (YAML) file, rather than as the source code of the GitHub HTML page.
-3. open a terminal window in that folder, and enter command:
+3. open a terminal window in that folder, and enter this command:
 
 ```bash
 docker compose up
 ```
 
-This is for Docker compose V2. If you are still on V1, use the non-plugin syntax, i.e. `docker-compose up` (mind the dash). Remember to prefix `sudo` for Linux/OSX.
+>This is for Docker compose V2. If you are still on V1, use the non-plugin syntax, i.e. `docker-compose up` (mind the dash). Remember to prefix `sudo` for Linux/MacOS.
 
 The macronizer API should now be reachable at `localhost:51234`. You can test it is there with `localhost:51234/test`.
 
-To macronize some text, you must post a JSON object representing it at `localhost:51234/macronize`. For instance, here is a sample request:
+To macronize some text, you must post a JSON object representing it at `localhost:51234/macronize`. For instance, here is a sample **request**:
 
 ```txt
 POST http://localhost:51234/macronize HTTP/1.1
@@ -85,7 +87,7 @@ Content-Length: 64
 }
 ```
 
-Response:
+The corresponding **response**:
 
 ```txt
 HTTP/1.1 200 OK
@@ -97,19 +99,23 @@ Server: waitress
 {"result":"N\u012bl sine magn\u014d v\u012bt\u0101 lab\u014dre dedit mort\u0101libus."}
 ```
 
-In Linux you could do like this:
+💡 For a quick test, you can use `curl` like this:
 
 ```bash
 curl -X POST -H "Content-Type: application/json" -d '{"text":"quos putamos amissos, praemissi sunt."}' localhost:51234/macronize
 ```
 
-## Preparation
+To integrate the macronizer service in your solution, usually the best way is using a [Docker compose script](docker-compose.yml), where you can stack your own services on top of this one. Your services will wrap the macronizer service, and expose it in the way you see most fit for your solution.
 
-Before even starting to work on the Docker image, I had to check all the setup passages, and make sure that they work seamlessly in a Linux environment. First, I created a fresh Ubuntu VM (20.04) to play with, using the Docker Linux image to create a `macronizer` container.
+## Testing the Solution
 
->Note: if you want to avoid [gcc issues](https://github.com/Alatius/latin-macronizer/issues/22), use Ubuntu 20.04. Later Ubuntu releases have compilation problem, which require some patches to be addressed, until the main repository is patched. Also, a full-fledged Unix distro is of course far from ideal as an image base; yet, starting from a more streamlined image would imply consuming much more time in adjusting the setup procedure.
+Before even starting to work on the Docker image, I had to check all the setup passages, and make sure that they work seamlessly in a Linux environment. Then, I added the Python scripts for the Flask API, and ensured that they worked as expected.
 
-To start with, in the Ubuntu user's home, create a `Documents/macron` directory. Then, enter this `macron` directory and clone the macronizer repository:
+The quickest way for doing it for me was creating a fresh Ubuntu VM (20.04) to play with. Having a true VM rather than a Docker container is easier at this stage, because everything is already there, and we can start with the same environment used by the macronizer itself.
+
+>Note: to avoid [gcc issues](https://github.com/Alatius/latin-macronizer/issues/22), use Ubuntu 20.04. Later Ubuntu releases have compilation problem, which require some patches to be addressed, until the main repository is patched. Also, a full-fledged Unix distro is of course far from ideal as an image base; yet, starting from a more streamlined image would imply consuming much more time in adjusting the setup procedure.
+
+In the Ubuntu VM we only work with the terminal. So, open a terminal window and in the Ubuntu user's home create a `Documents/macron` directory (any other will do anyway). Then, enter this `macron` directory and clone the macronizer repository:
 
 ```bash
 cd ~/Documents
@@ -118,13 +124,15 @@ cd macron
 git clone https://github.com/Alatius/latin-macronizer.git
 ```
 
+>When doing this in the Ubuntu Docker container, you will probably have to install git: `apt install git`.
+
 Then, essentially there are 3 setup steps:
 
 1. setup PostgreSql.
 2. setup macronizer following the original [instructions](https://github.com/Alatius/latin-macronizer/blob/master/INSTALL.txt).
-3. setup Flask API.
+3. setup the wrapper Flask API.
 
-### PostgreSql
+### Installing PostgreSql
 
 Quick setup instructions can be found e.g. here:
 
@@ -169,7 +177,7 @@ It's typical to use port 5432 if it is available. If it isn't, most installers w
 psql -p 5433
 ```
 
-#### PostgreSql Account
+#### Note on PostgreSql Account
 
 This is a reminder for those not acquainted with PostgreSql, summarized from [this page](https://www.digitalocean.com/community/tutorials/how-to-install-postgresql-on-ubuntu-20-04-quickstart).
 
@@ -201,7 +209,7 @@ createuser --interactive
 
 You can see the script from this project for a non interactive version.
 
-### Flask
+### Adding Flask API
 
 Useful links:
 
@@ -214,13 +222,15 @@ To develop the API skeleton I used a trivial macronizer's mock you can find at `
 curl -X POST -H "Content-Type: application/json" -d '{"text":"quos putamos amissos, praemissi sunt"}' localhost:105/macronize
 ```
 
-## Dockerization
+## Creating the Docker Image
 
-Here I recap the procedure for creating the Docker image. As macronizer requires to compile C files, execute Python scripts, and connect to a PostgreSql database, I chose the official PostgreSql image as my base.
+Once tested the FlasK API in the Ubuntu VM, it's time to package everything in a Docker image.
 
-### Create Container
+As macronizer requires to compile C files, execute Python scripts, and connect to a PostgreSql database, I chose the official PostgreSql image as my base. This anyway has the disadvantage that, unless using older images, we will have to deal with issues in compiling C, as macronizer relies on Ubuntu 20, whereas newer PostgreSql images use later versions of the OS.
 
-First you create a `postgres` container and fire `bash` in it:
+### Creating the Docker Container
+
+First you create a `postgres` container (here I name it `macronizer`) and fire `bash` in it:
 
 ```ps1
 # this is based on Debian GNU/Linux 11 (bullseye) (cat /etc/os-release)
@@ -230,13 +240,13 @@ docker exec -it macronizer /bin/bash
 
 In it, you can enter the psql console with `psql --username postgres`.
 
->Note: each of the following steps assumes that you are located in the last location of the previous step. It is like a unique sh file, but I split the commands into sections to make them more readable. You can find the full script at [build.sh](build.sh).
+>Note: each of the following steps assumes that you are located in the last location of the previous step. It is like a unique `sh` file, but I split the commands into sections to make them more readable. You can find the full script at [build.sh](build.sh).
 
-### Prepare
+### Preparing the Build Environment
 
-- start location: `/`
+- 📁 start location: `/`
 
-Prepare folder `/usr/local/macronizer` and install prerequisites.
+Create a folder `/usr/local/macronizer` where we will install source code to compile, and install prerequisites.
 
 ```bash
 cd /usr/local
@@ -246,11 +256,11 @@ apt-get update
 apt-get install git python3 python-is-python3 build-essential libfl-dev python3-psycopg2 unzip wget -y
 ```
 
-### Build
+### Building Macronizer Code
 
-- start location: `/usr/local/macronizer`
+- 📁 start location: `/usr/local/macronizer`
 
-Download repositories is not enough, as the original repository has some minor issues with `gcc` versions. Rather than forking the repository for very few changes, I just collected the files requiring a patch in a ZIP, used to overwrite the files from the original repository. Should the original repository be patched, the script will be simplified.
+Downloading the above repositories is not enough, as the original code has some minor issues with `gcc` versions. Rather than forking the repository for very few changes, I just collected the files requiring a patch in a ZIP, used to overwrite the files from the original repository. Should the original repository be patched, the script will be simplified.
 
 You can find the ZIP file in this repository. Essentially, it contains these fixes:
 
@@ -289,9 +299,9 @@ cd ../..
 ./train-rftagger.sh
 ```
 
-### Database
+### Creating Macronizer Database
 
-- start location: `/usr/local/macronizer`
+- 📁 start location: `/usr/local/macronizer`
 
 Use `psql` to create a new user and a database:
 
@@ -307,19 +317,19 @@ python macronize.py --initialize
 python macronize.py --test
 ```
 
-### Cleanup
+### Cleaning Up
 
-- start location: `/usr/local/macronizer`
+- 📁 start location: `/usr/local/macronizer`
 
 ```bash
 rm -Rf RFTagger treebank_data
 ```
 
-### API
+### Adding the API
 
-- start location: `/usr/local/latin-macronizer`
+- 📁 start location: `/usr/local/latin-macronizer`
 
-Put `api.py` in the `latin_macronizer` folder (this is from `api-production.py`), and then install its dependencies (see also <https://code.visualstudio.com/docs/python/tutorial-flask>):
+Put `api.py` in the `latin_macronizer` folder (this is [api-production.py](api-production.py) renamed as `api.py`), and then install its dependencies (see also <https://code.visualstudio.com/docs/python/tutorial-flask>):
 
 ```bash
 # I got api.py from a temporary location as this repo did not yet exist
@@ -332,16 +342,16 @@ python -m pip install flask
 python -m pip install waitress
 ```
 
-You can test with `python api.py`.
+You can test if the API works by running it with `python api.py`.
 
-### Build Image
+### Building the Image
 
 To build the image from the container as modified in the preceding sections (see [here](https://stackoverflow.com/questions/29015023/docker-commit-created-images-and-entrypoint)), enter the folder where you downloaded this repository in your host machine and type a command similar to this:
 
-1. `docker commit macronizer vedph2020/macronizer-base` to commit container's changes into an image.
-2. `docker build . -t vedph2020/macronizer:0.0.2-alpha` to build the image using [Dockerfile](Dockerfile).
+1. `docker commit macronizer vedph2020/macronizer-base` to commit container's changes into an image. The container name here is `macronizer`. If you changed the name, use your own.
+2. `docker build . -t vedph2020/macronizer:0.0.2-alpha` to build the image using [Dockerfile](Dockerfile). Use your own Docker Hub repository, here I'm using `vedph2020`.
 
->Note: playing with containers will quickly eat a lot of disk space in the host. In Windows, you can reclaim it later:
+>Note: playing with containers will quickly eat a lot of disk space in the host. In Windows, you can try to reclaim it later:
 
 1. locate the VHDX file for Docker WSL, usually somewhere like `C:\Users\dfusi\AppData\Local\Docker\wsl\data`.
 2. close Docker desktop from its icon and run `wsl --shutdown`.
