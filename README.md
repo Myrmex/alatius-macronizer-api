@@ -22,7 +22,7 @@
 
 Docker image:
 
->pull vedph2020/macronizer
+>pull vedph2020/macronizer (0.0.4-alpha)
 
 This project contains the logic for building a raw dockerized version of the [Alatius macronizer](https://alatius.com/macronizer/). This excellent macronizer by Johan Winge is essentially based on Python running on top of C tools like [RFTagger](http://www.cis.uni-muenchen.de/~schmid/tools/RFTagger/) and [Latin dependency treebank](http://www.dh.uni-leipzig.de/wo/projects/ancient-greek-and-latin-dependency-treebank-2-0/). It also provides an Apache based web page on top of its engine, but what is really needed for projects requiring to integrate it is a web API, so that any software client, whatever its language, can take advantage of that functionality. Sure, that may not be the optimal way of integrating software components; but certainly is one of the simplest.
 
@@ -54,7 +54,7 @@ Currently, the alpha image I got from this process is tagged `vedph2020/macroniz
 
 ## Usage
 
-To quickly play with the macronizer API service:
+👉 To quickly play with the macronizer API service:
 
 1. ensure you have [installed Docker](https://github.com/vedph/cadmus_doc/blob/master/deploy/docker-setup.md) on your computer.
 2. download [docker-compose.yml](docker-compose.yml) from this repository into some folder. Ensure that you download this as a plain text (YAML) file, rather than as the source code of the GitHub HTML page.
@@ -349,7 +349,7 @@ You can test if the API works by running it with `python api.py`.
 To build the image from the container as modified in the preceding sections (see [here](https://stackoverflow.com/questions/29015023/docker-commit-created-images-and-entrypoint)), enter the folder where you downloaded this repository in your host machine and type a command similar to this:
 
 1. `docker commit macronizer vedph2020/macronizer-base` to commit container's changes into an image. The container name here is `macronizer`. If you changed the name, use your own.
-2. `docker build . -t vedph2020/macronizer:0.0.2-alpha` to build the image using [Dockerfile](Dockerfile). Use your own Docker Hub repository, here I'm using `vedph2020`.
+2. `docker build . -t vedph2020/macronizer:0.0.4-alpha` to build the image using [Dockerfile](Dockerfile). Use your own Docker Hub repository, here I'm using `vedph2020`.
 
 >Note: playing with containers will quickly eat a lot of disk space in the host. In Windows, you can try to reclaim it later:
 

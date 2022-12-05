@@ -1,6 +1,6 @@
 version: '3.7'
 services:
   macronizer:
-    image: vedph2020/macronizer:0.0.2-alpha
+    image: vedph2020/macronizer:0.0.4-alpha
     ports:
       - 51234:105
