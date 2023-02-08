@@ -1,6 +1,9 @@
 version: '3.7'
 services:
   macronizer:
+    container_name: macronizer
     image: vedph2020/macronizer:0.0.4-alpha
     ports:
       - 51234:105
+    environment:
+      - PYTHONUNBUFFERED=1

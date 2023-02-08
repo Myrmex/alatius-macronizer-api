@@ -10,18 +10,17 @@ sys.path.append(MACRONIZER_LIB)
 # TODO: enable this
 # from macronizer import Macronizer
 
+print(f'Virtualenv: {os.getenv("VIRTUAL_ENV")}')
+print("Instantiating Flask...")
 app = Flask(__name__)
 
 # GET /test:
 # input: nothing
 # output: { result: string }
-
-
 @app.route("/test", methods=["GET"])
 def test():
     print("test invoked")
     return {"result": "test works!"}
-
 
 def getSwitch(dct, key):
     if (key not in dct):
@@ -34,8 +33,6 @@ def getSwitch(dct, key):
 # POST /macronize:
 # input: { text: string, maius?: boolean, utov?: boolean, itoj?: boolean, ambigs?: boolean}
 # output: { result: string, error?: string }
-
-
 @app.route("/macronize", methods=["POST"])
 def macronize():
     content_type = request.headers.get("Content-Type")
@@ -51,11 +48,13 @@ def macronize():
     utov = getSwitch(dct, "utov")
     itoj = getSwitch(dct, "itoj")
     ambigs = getSwitch(dct, "ambigs")
+    print(f"macronize: len={len(text)}, maius={maius}, utov={utov} itoj={itoj} ambigs={ambigs}")
     try:
         macronizer = Macronizer()
         macronizer.settext(text)
         result = macronizer.gettext(True, maius, utov, itoj, markambigs=ambigs)
     except Exception as ex:
+        print("error", ex.args[0])
         return {"error": ex.args[0], "result": ""}
     return {"result": result, "maius": maius, "utov": utov, "itoj": itoj, "ambigs": ambigs}
 
