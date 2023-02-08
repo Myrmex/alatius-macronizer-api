@@ -36,8 +36,8 @@ cd latin-macronizer
 
 # instructions from https://github.com/Alatius/latin-macronizer/blob/master/INSTALL.txt
 # (removing sudo, and adding apt install where required)
-apt install build-essential libfl-dev python3-psycopg2 unzip
-apt install python-is-python3
+apt install build-essential libfl-dev python3-psycopg2 unzip -y
+apt install python-is-python3 -y
 
 git clone https://github.com/Alatius/morpheus.git
 cd morpheus/src
@@ -51,7 +51,7 @@ cd ..
 
 git clone https://github.com/Alatius/treebank_data.git
 
-apt install wget
+apt install wget -y
 wget https://www.cis.uni-muenchen.de/~schmid/tools/RFTagger/data/RFTagger.zip
 unzip RFTagger.zip
 cd RFTagger/src
@@ -67,6 +67,7 @@ service postgresql start
 service postgresql status
 # change to user postgres so we can enter psql
 su - postgres
+psql
 postgres=# create user theusername password 'thepassword';
 postgres=# create database macronizer encoding 'UTF8' owner theusername;
 postgres=# \q
@@ -74,7 +75,7 @@ exit
 
 python macronize.py --initialize
 python macronize.py --test
-rm -Rf RFTagger treebank_data
+rm -rf RFTagger treebank_data
 
 # add API
 wget http://fusisoft.it/xfer/api.py
@@ -104,7 +105,7 @@ The image is now complete and ready to be used or pushed into the Docker Hub.
 
 ## Testing
 
-You can test the image by running a container from it, with a simple [docker compose script](docker-compose.yml), or via this command: `docker run --name macronizer -p 51234:105 vedph2020/macronizer`.
+You can test the image by running a container from it, with a simple [docker compose script](docker-compose.yml), starting it like `docker compose up`; or via this command: `docker run --name macronizer -p 51234:105 vedph2020/macronizer`.
 
 Once you have started the container, the API endpoint should be reachable from your host machine at `http://localhost:51234`:
 
