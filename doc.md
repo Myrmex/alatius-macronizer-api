@@ -9,8 +9,10 @@ Yet, that procedure complicated things because of the different OS version used 
 The only assumption in this procedure for your host machine is to have [Docker installed](https://myrmex.github.io/overview/cadmus/docker-setup/). Once Docker is in place, you can even repeat the whole procedure and it should produce the same result. At any rate, if you want to inspect the macronizer setup it's probably easier to just download the prebuilt image, and enter it, like this:
 
 ```bash
-docker run -it --name macronizer vedph2020/macronizer:0.1.1 /bin/bash
+docker run -it --name macronizer vedph2020/macronizer:0.1.3 /bin/bash
 ```
+
+>Note that this creates and starts the continer's shell. If you want to start the shell of an existing container, use `docker exec -it CONTAINER_ID /bin/bash` (the container must be running).
 
 You will then find everything under `/opt/latin-macronizer`.
 
@@ -91,14 +93,14 @@ python -m pip install psycopg2-binary
 (3) Once you have done this, exit the container, and create a base image from it like:
 
 ```bash
-docker commit CONTAINER_ID vedph2020/macronizer:0.1.1-base
+docker commit CONTAINER_ID vedph2020/macronizer:0.1.3-base
 ```
 
 Then get into a folder `Dockerfile` and `start.sh`, and generate the image according to the Dockerfile:
 
 ```bash
-docker build . -t vedph2020/macronizer:0.1.1 -t vedph2020/macronizer:latest
-docker push vedph2020/macronizer:0.1.1
+docker build . -t vedph2020/macronizer:0.1.3 -t vedph2020/macronizer:latest
+docker push vedph2020/macronizer:0.1.3
 ```
 
 The image is now complete and ready to be used or pushed into the Docker Hub.
